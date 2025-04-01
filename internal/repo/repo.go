@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/newBa1t/grpc_server.git/internal/config"
 	"github.com/pkg/errors"
@@ -19,11 +20,11 @@ type repository struct {
 }
 
 type User struct {
-	Email     string
-	Username  string
-	Password  string
-	FirstName string
-	LastName  string
+	Email     string `validate:"required,email"`
+	Username  string `validate:"required,min=3,max=30"`
+	Password  string `validate:"required,min=6,max=100"`
+	FirstName string `validate:"required,min=2,max=50"`
+	LastName  string `validate:"required,min=2,max=50"`
 }
 
 type Repository interface {
@@ -57,6 +58,9 @@ func NewRepository(ctx context.Context, cfg config.PostgreSQL) (Repository, erro
 		return nil, errors.Wrap(err, "failed to create PostgreSQL connection pool")
 	}
 
+	// Оптимизация выполнения запросов (кеширование запросов) - добавил из проекта @luzhnov-aleksei, так как посчитал хорошей практикой
+	config.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeCacheDescribe
+
 	err = pool.Ping(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to connect to database")
@@ -67,6 +71,7 @@ func NewRepository(ctx context.Context, cfg config.PostgreSQL) (Repository, erro
 }
 
 func (r *repository) RegisterUser(ctx context.Context, user *User) (string, error) {
+
 	var username string
 	err := r.pool.QueryRow(ctx, CreateUserQuery, user.Email, user.Username, user.Password, user.FirstName, user.LastName).Scan(&username)
 	if err != nil {
