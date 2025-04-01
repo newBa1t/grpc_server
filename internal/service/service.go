@@ -36,6 +36,27 @@ type User struct {
 
 func (s *ServerAuth) Register(ctx context.Context, req *gen.RegisterRequest) (*gen.RegisterResponse, error) {
 
+	if req.GetUsername() == "" {
+		s.logger.Errorf("Username is required")
+		return nil, status.Error(codes.InvalidArgument, "Username is required")
+	}
+	if req.GetEmail() == "" {
+		s.logger.Errorf("Email is required")
+		return nil, status.Error(codes.InvalidArgument, "Email is required")
+	}
+	if req.GetPassword() == "" {
+		s.logger.Errorf("Password is required")
+		return nil, status.Error(codes.InvalidArgument, "Password is required")
+	}
+	if req.GetFirstName() == "" {
+		s.logger.Errorf("First Name is required")
+		return nil, status.Error(codes.InvalidArgument, "First Name is required")
+	}
+	if req.GetLastName() == "" {
+		s.logger.Errorf("Last Name is required")
+		return nil, status.Error(codes.InvalidArgument, "Last Name is required")
+	}
+
 	exists, err := s.repo.CheckUserExists(ctx, req.GetUsername(), req.GetEmail())
 	if err != nil {
 		s.logger.Errorf("Username or Email is invalid")
@@ -68,6 +89,7 @@ func (s *ServerAuth) Register(ctx context.Context, req *gen.RegisterRequest) (*g
 }
 
 func (s *ServerAuth) Login(ctx context.Context, req *gen.LoginRequest) (*gen.LoginResponse, error) {
+	s.logger.Infof("Login attempt for user: %s", req.GetEmail())
 
 	user, err := s.repo.GetUserByUsername(ctx, req.GetEmail())
 	if err != nil {
@@ -75,11 +97,15 @@ func (s *ServerAuth) Login(ctx context.Context, req *gen.LoginRequest) (*gen.Log
 		return nil, status.Error(codes.NotFound, "User not found")
 	}
 
+	s.logger.Infof("User found: %s", req.GetEmail())
+
 	checkPasswordHash := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.GetPassword()))
 	if checkPasswordHash != nil {
 		s.logger.Errorf("Password is invalid")
 		return nil, status.Error(codes.Internal, "password is invalid")
 	}
+
+	s.logger.Infof("User successfully logged in: %s", req.GetEmail())
 
 	return &gen.LoginResponse{Token: "JWT_TOKEN"}, nil
 }
