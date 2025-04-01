@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/newBa1t/grpc_server.git/internal/config"
