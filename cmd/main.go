@@ -64,4 +64,9 @@ func main() {
 
 	logger.Info("Получен сигнал завершения, корректное завершение работы сервера gRPC...")
 	grpcServer.GracefulStop()
+
+	if err := repository.ShutdownPostgres(); err != nil {
+		logger.Fatal(errors.Wrap(err, "Error shutting down repository"))
+	}
+	logger.Info("Shutting down repository")
 }

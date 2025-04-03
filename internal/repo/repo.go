@@ -31,6 +31,7 @@ type Repository interface {
 	RegisterUser(ctx context.Context, user *User) (string, error)
 	CheckUserExists(ctx context.Context, username string, email string) (bool, error)
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
+	ShutdownPostgres() error
 }
 
 func NewRepository(ctx context.Context, cfg config.PostgreSQL) (Repository, error) {
@@ -102,4 +103,12 @@ func (r *repository) GetUserByUsername(ctx context.Context, username string) (*U
 		return nil, errors.Wrap(err, "unable to get user by username")
 	}
 	return &user, nil
+}
+
+func (r *repository) ShutdownPostgres() error {
+	if r.pool != nil {
+		r.pool.Close()
+		return nil
+	}
+	return errors.New("postgres pool is empty")
 }
